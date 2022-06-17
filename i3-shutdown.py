@@ -23,8 +23,7 @@ def getOpenWindows():
     for c in query.children:
         name = c.get_wm_name()
         if name:
-            print(name)
-            if (name.startswith("[i3 con]") or name == "i3-graceful-exit"):
+            if (name.startswith("[i3 con]") or name == "i3-shutdown"):
                 continue
             ret.append(name)
     return ret
@@ -35,22 +34,32 @@ class WaitingDialog(QtWidgets.QWidget):
         self.setLayout(QtWidgets.QVBoxLayout())
         self.text = QtWidgets.QLabel(self)
         self.text.setAlignment(QtCore.Qt.AlignCenter)
+        self.text.setWordWrap(True)
         self.btn = QtWidgets.QPushButton(self)
         self.btn.setText("Force Quit")
         self.cancelBtn = QtWidgets.QPushButton(self)
         self.cancelBtn.setText("Cancel")
+        self.layout().setSpacing(10)
         container = QtWidgets.QWidget(self)
         container.setLayout(QtWidgets.QHBoxLayout())
-        container.layout().addWidget(self.btn)
-        container.layout().addWidget(self.cancelBtn)
-        self.layout().addWidget(self.text)
-        self.layout().addWidget(container)
+        container.layout().addWidget(QtWidgets.QWidget(), 2)
+        container.layout().addWidget(self.btn, 1)
+        container.layout().addWidget(self.cancelBtn, 1)
+        container.layout().addWidget(QtWidgets.QWidget(), 2)
+        container.layout().setSpacing(10)
+        center = QtWidgets.QWidget(self)
+        center.setLayout(QtWidgets.QVBoxLayout())
+        center.layout().addWidget(QtWidgets.QWidget(), 1)
+        center.layout().addWidget(self.text)
+        center.layout().addWidget(container)
+        center.layout().addWidget(QtWidgets.QWidget(), 1)
+        self.layout().addWidget(center)
         self.btn.clicked.connect(self.onPressSkip)
         self.cancelBtn.clicked.connect(self.onPressCancel)
         self.onTimer()
 
     def setWaitingWindows(self, wnds):
-        self.text.setText("Waiting for " + str(wnds) + " to close")
+        self.text.setText("Waiting for " + str(len(wnds)) + " windows to close:\n" + str(wnds))
     
     def onTimer(self):
         value = getOpenWindows()
@@ -71,7 +80,6 @@ class WaitingDialog(QtWidgets.QWidget):
 
 def main():
     closeAllWindowsGracefully()
-    time.sleep(1)
     app = QtWidgets.QApplication(sys.argv)
     window = WaitingDialog()
     window.show()
