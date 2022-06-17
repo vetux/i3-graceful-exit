@@ -5,10 +5,26 @@ import sys
 import time
 import PyQt5.QtWidgets as QtWidgets
 import PyQt5.QtCore as QtCore
-from Xlib import display, X
+from Xlib import display, protocol, X
 
 def closeAllWindowsGracefully():
     subprocess.run(["sh", "-c", "\"echo \"$(xdotool search \"\" | while IFS= read -r line ; do wmctrl -ci \"$line\"; done)\"\""])
+    return
+    d = display.Display()
+    root = d.screen().root
+    query = root.query_tree()
+    for c in query.children:
+        name = c.get_wm_name()
+        WM_PROTOCOLS = d.intern_atom('WM_PROTOCOLS')
+        WM_DELETE_WINDOW = d.intern_atom('WM_DELETE_WINDOW')
+        if name:
+            if (name.startswith("[i3 con]") or name == "i3-shutdown"):
+                continue
+        ev = protocol.event.ClientMessage(window=c, 
+                                            client_type=WM_PROTOCOLS, 
+                                            data=(32, [WM_DELETE_WINDOW, X.CurrentTime, 0, 0, 0]))
+        # Does not send anything for some reason.
+        c.send_event(ev)
 
 def exitI3():
     subprocess.run(["i3-msg", "exit"])
@@ -16,9 +32,7 @@ def exitI3():
 def getOpenWindows():
     d = display.Display()
     root = d.screen().root
-
     query = root.query_tree()
-
     ret = []
     for c in query.children:
         name = c.get_wm_name()
