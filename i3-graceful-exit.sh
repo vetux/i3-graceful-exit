@@ -1,17 +1,14 @@
 #!/bin/bash
 
-# Depends on xdotool
+# Depends on xdotool and wmctrl
 
-focus=$(xdotool getwindowfocus)
-allWindows=$(xdotool search -onlyvisible "")
-
-closeWindows=""
+allWindows=$(xdotool search -onlyvisible "" 2> /dev/null)
 
 echo "$allWindows" | while IFS= read -r line ; do
 	killWindow=0
 	if [ "$line" != "$focus" ]
 	then
-               xdotool windowclose "$line"
+		wmctrl -ci "$line"
 	fi
 done
 
